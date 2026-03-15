@@ -1,3 +1,11 @@
+'''
+Author: 99AndrewTsengHKU-stu u3013368@connect.hku.hk
+Date: 2025-12-15 16:16:36
+LastEditors: 99AndrewTsengHKU-stu u3013368@connect.hku.hk
+LastEditTime: 2025-12-15 17:00:05
+FilePath: \helical-kats\tests\t03.py
+Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+'''
 # -----------------------------------------------------------------------
 # This file is part of Pykatsevich distribution (https://github.com/astra-toolbox/helical-kats).
 # Copyright (c) 2024 imec-Vision Lab, University of Antwerp.
@@ -29,14 +37,10 @@ def test_pipeline(settings_file):
     import os
     import astra
 
-    test_dir = os.getcwd()
-    try:
-        test_dir = os.sep.join(__file__.split("/")[:-1])
-    except:
-        print("Failed to pick the path to the Python file, picking current work directory instead")
+    test_dir = os.path.dirname(os.path.abspath(__file__))
 
     yaml_settings = {}
-    with open(os.sep.join([test_dir, settings_file]), "r") as file:
+    with open(os.path.join(test_dir, settings_file), "r") as file:
         yaml_settings = yaml.safe_load(file)
 
     phantom_settings = yaml_settings['phantom']
@@ -98,5 +102,5 @@ def test_pipeline(settings_file):
     plt.show()
 
 if __name__=="__main__":
-    yaml_settings_file = "test03.yaml"
+    yaml_settings_file = r"D:\Github\helical-kats\tests\test03.yaml"
     test_pipeline(yaml_settings_file)

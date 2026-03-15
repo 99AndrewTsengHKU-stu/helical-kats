@@ -16,3 +16,7 @@
 # -----------------------------------------------------------------------
 
 __version__ = "0.0.1"
+
+from .dicom import load_dicom_projections
+
+__all__ = ["__version__", "load_dicom_projections"]

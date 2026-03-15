@@ -22,7 +22,8 @@ def astra_helical_views(
         SDD: float,
         pixel_size: float,
         angles: np.ndarray,
-        pitch_per_angle:float
+        pitch_per_angle:float,
+        vertical_shifts: np.ndarray | None = None
     ):
     """
     Generate ASTRA views from the helix description.
@@ -40,6 +41,9 @@ def astra_helical_views(
         Each value is the angle between the X-axis and projection direction.
     pitch_per_angle : float
         Vertical pitch size per every projection angle in chosen units, e.g., mm.
+    vertical_shifts : np.ndarray, optional
+        Explicit z-shifts per view. When provided, this overrides the linear
+        spacing defined by ``pitch_per_angle``.
     
     Return:
     =======
@@ -47,11 +51,19 @@ def astra_helical_views(
     """
     rot = lambda x, theta: [x[0]*np.cos(theta)-x[1]*np.sin(theta),x[0]*np.sin(theta)+x[1]*np.cos(theta),x[2]]
 
-    vertical_shift = np.linspace(
-        -pitch_per_angle*angles.shape[0]*0.5,
-        pitch_per_angle*angles.shape[0]*0.5,
-        angles.shape[0]
-    )
+    angles = np.asarray(angles, dtype=np.float32)
+
+    if vertical_shifts is None:
+        vertical_shift = np.linspace(
+            -pitch_per_angle*angles.shape[0]*0.5,
+            pitch_per_angle*angles.shape[0]*0.5,
+            angles.shape[0],
+            dtype=np.float32
+        )
+    else:
+        vertical_shift = np.asarray(vertical_shifts, dtype=np.float32)
+        if vertical_shift.shape[0] != angles.shape[0]:
+            raise ValueError("vertical_shifts must have the same length as angles")
 
     views_list = []
 
@@ -59,8 +71,8 @@ def astra_helical_views(
 
     for i, aa in enumerate(angles):
         views_list.append(np.concatenate((
-            rot(start_view[0:3], aa) + np.array([0, 0, vertical_shift[i]]),
-            rot(start_view[3:6], aa) + np.array([0, 0, vertical_shift[i]]),
+            rot(start_view[0:3], aa) + np.array([0, 0, vertical_shift[i]], dtype=np.float32),
+            rot(start_view[3:6], aa) + np.array([0, 0, vertical_shift[i]], dtype=np.float32),
             rot(start_view[6:9], aa),
             rot(start_view[9:12],aa)
         )))
