@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe -c \":*)",
+      "Bash(grep -r \"delta_s\\\\|source_pos\" /d/Github/helical-kats/*.py)",
+      "Bash(grep -n \"projs_per_turn\" /d/Github/helical-kats/pykatsevich/*.py)",
+      "Bash(\"C:\\\\Users\\\\Andrew\\\\anaconda3\\\\envs\\\\MNIST\\\\python.exe\":*)",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe d:/Github/helical-kats/tests/run_dicom_recon.py --dicom-dir \"D:\\\\AAPM-Data\\\\L067\\\\L067\\\\quarter_DICOM-CT-PD\" --rows 512 --cols 512 --slices 560 --voxel-size 0.664 --decimate 10 --save-npy d:/Github/helical-kats/rec_L067_raw.npy)",
+      "Bash(tasklist //FI \"IMAGENAME eq python.exe\")",
+      "Bash(tasklist /FI \"IMAGENAME eq python.exe\")",
+      "Bash(ls -la d:/Github/helical-kats/curved_*.py d:/Github/helical-kats/curved_*.png d:/Github/helical-kats/compare_*.png d:/Github/helical-kats/rec_*.png d:/Github/helical-kats/test_*.png)",
+      "Bash(python run_test03.py)",
+      "Bash(pip install pyyaml)",
+      "Bash(pip install pydicom)",
+      "Bash(pip install scipy)",
+      "Bash(pip install cupy-cuda12x)",
+      "Bash(conda env list)",
+      "Bash(C:/Users/Andrew/anaconda3/condabin/conda.bat env list)",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe -c \"import astra; print\\(''astra OK''\\); import cupy; print\\(''cupy OK''\\); import scipy; print\\(''scipy OK''\\); import yaml; print\\(''yaml OK''\\)\")",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe run_test03.py)",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe run_test01.py)",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe -c \"import astra; print\\(''ASTRA version:'', astra.__version__\\); print\\(''GPU count:'', astra.get_gpu_info\\(\\)\\); astra.set_gpu_index\\(0\\); print\\(''GPU set OK''\\)\")",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe run_test02.py)",
+      "Bash(nvidia-smi)",
+      "Read(//d/AAPM-Data/L067/L067/**)",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe run_L067.py)",
+      "Bash(tasklist)",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe \"Quick Run Through 0304/run_L067.py\")",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe validate_cupy_bp.py)",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe debug_bp.py)",
+      "Bash(C:/Users/Andrew/anaconda3/envs/MNIST/python.exe debug_bp2.py)",
+      "mcp__plugin_claude-mem_mcp-search__save_observation",
+      "Read(//c/Users/Andrew/.claude/projects/d--Github-helical-kats/**)",
+      "Bash(ls -la \"D:/Github/helical-kats/Quick Run Through 0304/\"*.npy)",
+      "Bash(ls -la \"D:/Github/helical-kats/Quick Run Through 0304/\"*.tiff)"
+    ],
+    "additionalDirectories": [
+      "d:\\Github\\helical-kats"
+    ]
+  }
+}

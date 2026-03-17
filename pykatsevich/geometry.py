@@ -23,7 +23,9 @@ def astra_helical_views(
         pixel_size: float,
         angles: np.ndarray,
         pitch_per_angle:float,
-        vertical_shifts: np.ndarray | None = None
+        vertical_shifts: np.ndarray | None = None,
+        pixel_size_col: float | None = None,
+        pixel_size_row: float | None = None,
     ):
     """
     Generate ASTRA views from the helix description.
@@ -35,7 +37,7 @@ def astra_helical_views(
     SDD : float
         Source-detector distance.
     pixel_size : float
-        Size of detetor pixels.
+        Size of detetor pixels (used for both col and row if separate sizes not given).
     angles : np.ndarray
         Array of projection angles, counter-clockwise rotation around Z.
         Each value is the angle between the X-axis and projection direction.
@@ -44,7 +46,11 @@ def astra_helical_views(
     vertical_shifts : np.ndarray, optional
         Explicit z-shifts per view. When provided, this overrides the linear
         spacing defined by ``pitch_per_angle``.
-    
+    pixel_size_col : float, optional
+        Detector pixel size in the column (fan/horizontal) direction.
+    pixel_size_row : float, optional
+        Detector pixel size in the row (z/vertical) direction.
+
     Return:
     =======
         Array of 12-element vectors, each vector describing a single projection view.
@@ -67,7 +73,9 @@ def astra_helical_views(
 
     views_list = []
 
-    start_view = [SOD, 0, 0, -(SDD - SOD), 0, 0, 0, pixel_size, 0, 0, 0, pixel_size]
+    ps_col = pixel_size_col if pixel_size_col is not None else pixel_size
+    ps_row = pixel_size_row if pixel_size_row is not None else pixel_size
+    start_view = [SOD, 0, 0, -(SDD - SOD), 0, 0, 0, ps_col, 0, 0, 0, ps_row]
 
     for i, aa in enumerate(angles):
         views_list.append(np.concatenate((

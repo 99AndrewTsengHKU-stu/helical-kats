@@ -1,0 +1,204 @@
+======================================================================
+投影 DICOM: L067_4L_100kv_quarterdose.1.00001.dcm
+======================================================================
+
+--- ⭐ 有趣的标签 ---
+⭐   (0018,9311) SpiralPitchFactor: 0.6
+⭐   (7033,100E) Private tag data: b'FFSZ'
+
+--- 全部标签（共 71 个）---
+  (0008,0016) SOPClassUID: '1.2.840.10008.5.1.4.1.1.2'
+  (0008,0018) SOPInstanceUID: '1.3.6.1.4.1.9590.100.1.2.176718330212258034929496629081751708512'
+  (0008,0060) Modality: 'CT'
+  (0008,0070) Manufacturer: 'SIEMENS'
+  (0010,0010) PatientName: 'L067-QD'
+  (0010,0040) PatientSex: 'M'
+  (0010,1010) PatientAge: '053Y'
+  (0018,0015) BodyPartExamined: 'ABDOMEN'
+  (0018,0060) KVP: '100.0'
+  (0018,0061) ?: '0.0192'
+  (0018,0090) DataCollectionDiameter: '500.0'
+  (0018,1048) ContrastBolusIngredient: 'IODINE'
+  (0018,1150) ExposureTime: '500'
+  (0018,1151) XRayTubeCurrent: '70'
+⭐   (0018,9311) SpiralPitchFactor: 0.6
+  (0020,000D) StudyInstanceUID: '1.3.6.1.4.1.9590.100.1.2.42411298112030374827102030633782930433'
+  (0020,000E) SeriesInstanceUID: '1.3.6.1.4.1.9590.100.1.2.374173496511952081931664590080712962726'
+  (0020,0011) SeriesNumber: '1'
+  (0020,0013) InstanceNumber: '1'
+  (0028,0002) SamplesPerPixel: 1
+  (0028,0004) PhotometricInterpretation: 'MONOCHROME2'
+  (0028,0010) Rows: 736
+  (0028,0011) Columns: 64
+  (0028,0100) BitsAllocated: 16
+  (0028,0101) BitsStored: 16
+  (0028,0102) HighBit: 15
+  (0028,0103) PixelRepresentation: 0
+  (0028,0106) SmallestImagePixelValue: 1176
+  (0028,0107) LargestImagePixelValue: 41600
+  (0028,1052) RescaleIntercept: '-0.2077793795498'
+  (0028,1053) RescaleSlope: '0.00014143614681'
+  (0400,0315) ?: 0.4000000059604645
+  (7029,0010) Private Creator: 'CT IMG ACQUISITION'
+  (7029,1002) Private tag data: b'b\x96\xa4?'
+  (7029,1006) Private tag data: b'\xe0\x1f\x8c?'
+  (7029,100B) Private tag data: b'CYLINDRICAL '
+  (7029,1010) Private tag data: b'@\x00'
+  (7029,1011) Private tag data: b'\xe0\x02'
+  (7031,0010) Private Creator: 'CT IMG ACQUISITION'
+  (7031,1001) Private tag data: b'\xcf\xbf\x95@'
+  (7031,1002) Private tag data: b'=\nBB'
+  (7031,1003) Private tag data: b'\x00\xc0\x14D'
+  (7031,1031) Private tag data: b'3\xb3\x87D'
+  (7031,1033) Private tag data: b'\x00\xd0\xb8C\x00\x00\x02B'
+  (7033,0010) Private Creator: 'CT IMG ACQUISITION'
+  (7033,100B) Private tag data: b'\x00\x00\x00\x00'
+  (7033,100C) Private tag data: b'3;\xb09'
+  (7033,100D) Private tag data: b'\x00\x00\x00\x00'
+⭐   (7033,100E) Private tag data: b'FFSZ'
+  (7033,1013) Private tag data: b'\x00\t'
+  (7033,1061) Private tag data: b'\x01\x00'
+  (7033,1063) Private tag data: b'\x01\x00'
+  (7033,1065) Private tag data: b'(3\xacI\x80\xbe\xacI\x1fJ\xadI\x06\xd6\xadI8b\xaeI\xb6\xee\xaeI\x83{\xafI\xa1\x08\xb0I\x11\x96\xb0I\xd7#\xb1I\xf4\xb1\
+  (7037,0010) Private Creator: 'CT IMG ACQUISITION'
+  (7037,1009) Private tag data: b'HELICAL '
+  (7037,100A) Private tag data: b'FANBEAM '
+  (7039,0010) Private Creator: 'CT IMG ACQUISITION'
+  (7039,1003) Private tag data: b'YES '
+  (7039,1004) Private tag data: b'YES '
+  (7039,1005) Private tag data: b'YES '
+  (7039,1006) Private tag data: b'YES '
+  (7039,1007) Private tag data: b'YES '
+  (7039,1008) Private tag data: b'YES '
+  (7039,1009) Private tag data: b'YES '
+  (7041,0010) Private Creator: 'CT IMG ACQUISITION'
+  (7041,1003) Private tag data: b'\x05\x00'
+  (7041,1004) Private tag data: b'Hemangioma;\nHemangioma;\nPost op/Post RFA defect;\nBenign Cyst;\nBenign Cyst '
+  (7041,1005) Private tag data: b'\xeb!\xc2\xbfj:\xa1\xbfG\xcd\xa8\xbe\x12\x96\xd6\xbfr\xbf\x0e\xbf'
+  (7041,1006) Private tag data: b'\x00\x00\xdaB\x00\x00cC\x00\x00\xb6B\x00\x00\x1dC\x00\x00\x1dC'
+  (7041,1007) Private tag data: b'}D\xc4B\xee9\xddB\x94\xc6\x8dB.\xd8\xfbB\xaa\xba\xd1B'
+  (7FE0,0010) PixelData: b'\xb5\x07m\x07\x1c\x05\x16\x06\x9c\x05$\x06\xbf\x05\x81\x06\x83\x06F\x06\x0e\x06g\x06^\x06\xf7\x05\xf6\x05\xd4\x07s\x05
+
+======================================================================
+GT DICOM (full_1mm): L067_FD_1_1.CT.0001.0001.2015.12.22.18.09.40.840353.358074219.IMA
+======================================================================
+
+--- ⭐ 有趣的标签 ---
+⭐   (0018,0050) SliceThickness: '1.0'
+⭐   (0018,1130) TableHeight: '126.0'
+⭐   (0018,5100) PatientPosition: 'FFS'
+⭐   (0018,9309) TableSpeed: 46.0
+⭐   (0018,9310) TableFeedPerRotation: 23.0
+⭐   (0018,9311) SpiralPitchFactor: 0.6
+⭐   (0018,9323) ExposureModulationType: 'XYZ_EC'
+⭐   (0019,1090) [Osteo Offset]: '0.0'
+⭐   (0020,0032) ImagePositionPatient: [-180.66796875, -295.66796875, -67]
+⭐   (0020,1040) PositionReferenceIndicator: ''
+⭐   (0020,1041) SliceLocation: '67.0'
+
+--- 全部标签（共 105 个）---
+  (0008,0005) SpecificCharacterSet: 'ISO_IR 100'
+  (0008,0008) ImageType: ['ORIGINAL', 'PRIMARY', 'AXIAL', 'CT_SOM5 SPI']
+  (0008,0016) SOPClassUID: '1.2.840.10008.5.1.4.1.1.2'
+  (0008,0018) SOPInstanceUID: '1.3.12.2.1107.5.1.4.64291.30000015122300005219400001509'
+  (0008,0020) StudyDate: '20121119'
+  (0008,0021) SeriesDate: '20151222'
+  (0008,0022) AcquisitionDate: '20121119'
+  (0008,0023) ContentDate: '20121119'
+  (0008,002A) AcquisitionDateTime: '20121119092503.285000'
+  (0008,0030) StudyTime: '092050.640000'
+  (0008,0031) SeriesTime: '171644.392000'
+  (0008,0032) AcquisitionTime: '092503.285000'
+  (0008,0033) ContentTime: '092503.285000'
+  (0008,0050) AccessionNumber: ''
+  (0008,0060) Modality: 'CT'
+  (0008,0070) Manufacturer: 'SIEMENS'
+  (0008,0090) ReferringPhysicianName: ''
+  (0008,1090) ManufacturerModelName: 'SOMATOM Definition AS+'
+  (0008,2111) DerivationDescription: 'Force Anonymity'
+  (0008,2112) SourceImageSequence: <Sequence, length 1>
+  (0008,3010) IrradiationEventUID: '1.3.12.2.1107.5.1.4.64291.30000012111912544528100000055'
+  (0009,0010) Private Creator: 'SIEMENS CT VA1 DUMMY'
+  (0010,0010) PatientName: 'L067_FD_1'
+  (0010,0020) PatientID: 'Anonymous'
+  (0010,0030) PatientBirthDate: ''
+  (0010,0040) PatientSex: 'O'
+  (0010,21C0) PregnancyStatus: 4
+  (0018,0015) BodyPartExamined: 'ABDOMEN'
+⭐   (0018,0050) SliceThickness: '1.0'
+  (0018,0060) KVP: '100.0'
+  (0018,0090) DataCollectionDiameter: '500.0'
+  (0018,1020) SoftwareVersions: 'syngo CT 2011A'
+  (0018,1100) ReconstructionDiameter: '340.0'
+  (0018,1110) DistanceSourceToDetector: '1085.6'
+  (0018,1111) DistanceSourceToPatient: '595.0'
+  (0018,1120) GantryDetectorTilt: '0.0'
+⭐   (0018,1130) TableHeight: '126.0'
+  (0018,1140) RotationDirection: 'CW'
+  (0018,1150) ExposureTime: '500'
+  (0018,1151) XRayTubeCurrent: '101'
+  (0018,1152) Exposure: '84'
+  (0018,1160) FilterType: 'FLAT'
+  (0018,1170) GeneratorPower: '30'
+  (0018,1190) FocalSpots: '1.2'
+  (0018,1200) DateOfLastCalibration: '20121119'
+  (0018,1201) TimeOfLastCalibration: ''
+  (0018,1210) ConvolutionKernel: 'B30f'
+⭐   (0018,5100) PatientPosition: 'FFS'
+  (0018,9306) SingleCollimationWidth: 0.6
+  (0018,9307) TotalCollimationWidth: 38.4
+⭐   (0018,9309) TableSpeed: 46.0
+⭐   (0018,9310) TableFeedPerRotation: 23.0
+⭐   (0018,9311) SpiralPitchFactor: 0.6
+  (0018,9313) DataCollectionCenterPatient: [0.33203125, -125.66796875, -67.0]
+  (0018,9318) ReconstructionTargetCenterPatient: [-10.66796875, -125.66796875, -67.0]
+⭐   (0018,9323) ExposureModulationType: 'XYZ_EC'
+  (0018,9324) EstimatedDoseSaving: 51.4556
+  (0018,9345) CTDIvol: 3.3185613913043475
+  (0018,9346) CTDIPhantomTypeCodeSequence: <Sequence, length 1>
+  (0018,9352) CalciumScoringMassFactorDevice: [0.6790000200271606, 0.7139999866485596, 0.7459999918937683]
+  (0019,0010) Private Creator: 'SIEMENS CT VA0  COAD'
+⭐   (0019,1090) [Osteo Offset]: '0.0'
+  (0019,1092) [Osteo Regression Line Slope]: '0.9236'
+  (0019,1093) [Osteo Regression Line Intercept]: '-1.6565'
+  (0019,1096) [Osteo Phantom Number]: '0'
+  (0019,10B0) [Feed per Rotation]: '23.0'
+  (0020,000D) StudyInstanceUID: '1.3.12.2.1107.5.1.4.64291.30000015122300005219400001507'
+  (0020,000E) SeriesInstanceUID: '1.3.12.2.1107.5.1.4.64291.30000015122300005219400001508'
+  (0020,0010) StudyID: ''
+  (0020,0011) SeriesNumber: '1'
+  (0020,0012) AcquisitionNumber: '2'
+  (0020,0013) InstanceNumber: '1'
+⭐   (0020,0032) ImagePositionPatient: [-180.66796875, -295.66796875, -67]
+  (0020,0037) ImageOrientationPatient: [1, 0, 0, 0, 1, 0]
+  (0020,0052) FrameOfReferenceUID: '1.3.12.2.1107.5.1.4.64291.30000015122300005219400001506'
+⭐   (0020,1040) PositionReferenceIndicator: ''
+⭐   (0020,1041) SliceLocation: '67.0'
+  (0021,0010) Private Creator: 'SIEMENS MED'
+  (0021,1011) [Target]: [11, 0]
+  (0028,0002) SamplesPerPixel: 1
+  (0028,0004) PhotometricInterpretation: 'MONOCHROME2'
+  (0028,0010) Rows: 512
+  (0028,0011) Columns: 512
+  (0028,0030) PixelSpacing: [0.6640625, 0.6640625]
+  (0028,0100) BitsAllocated: 16
+  (0028,0101) BitsStored: 12
+  (0028,0102) HighBit: 11
+  (0028,0103) PixelRepresentation: 0
+  (0028,0106) SmallestImagePixelValue: 0
+  (0028,0107) LargestImagePixelValue: 2334
+  (0028,1050) WindowCenter: [55, -600]
+  (0028,1051) WindowWidth: [440, 1500]
+  (0028,1052) RescaleIntercept: '-1024.0'
+  (0028,1053) RescaleSlope: '1.0'
+  (0028,1054) RescaleType: 'HU'
+  (0028,1055) WindowCenterWidthExplanation: ['WINDOW1', 'WINDOW2']
+  (0029,0010) Private Creator: 'SIEMENS CSA HEADER'
+  (0029,0011) Private Creator: 'SIEMENS MEDCOM HEADER'
+  (0029,1008) [CSA Image Header Type]: 'SOM 5'
+  (0029,1009) [CSA Image Header Version]: 'VA10A 971201'
+  (0029,1010) [CSA Image Header Info]: b'\x00\x00\x05\x00FD\x08\x00\x00\x00\x00\x00\x00\xf6v@\x00\x00\x06\x00FD\x08\x00k\x1dg\x7f\x90I\x10@\x00\x00\x07\x00SL\x
+  (0029,1140) [Application Header Sequence]: <Sequence, length 2>
+  (0032,1032) RequestingPhysician: 'MITCHELL^JESSICA^LYNNE'
+  (0032,1060) RequestedProcedureDescription: '*CT ABDOMEN & PELVIS'
+  (7FE0,0010) PixelData: b'*\x00\x15\x00\x17\x00\x1b\x00\x16\x00\x1c\x00\x1e\x00\x19\x00\x16\x00\x07\x00\x07\x00\x1a\x00\x1e\x00#\x00#\x00\x1b\x0

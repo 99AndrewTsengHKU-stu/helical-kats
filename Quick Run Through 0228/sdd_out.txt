@@ -1,0 +1,33 @@
+﻿============================================================
+SOD/SDD 全量对比
+============================================================
+(7031,1003) DetectorFocalCenterRadialDistance = 595.0
+(7031,1031) ConstantRadialDistance            = 1085.5999755859375
+(0018,9402) DistanceSrcToPatient (SOD_TAG)    = None
+(0018,1110) DistanceSrcToDetector (SDD_TAG)   = None
+
+--- Helix2Fan 读取逻辑 ---
+  dso (SOD) = (7031,1003) = 595.0 mm
+  dsd (SDD) = (7031,1031) = 1085.5999755859375 mm
+
+--- Katsevich dicom.py 读取逻辑 ---
+  SOD_TAG (0018,9402) = None  ->  fallback (7031,1003) = 595.0
+  SDD_TAG (0018,1110) = None  ->  fallback (7031,1031) = 1085.5999755859375
+  => sod = 595.0  sdd = 1085.5999755859375
+
+============================================================
+du/dv 对比 (像素间距)
+============================================================
+(7029,1002) DetectorElementTransverseSpacing (du) = 1.285839319229126 mm
+(7029,1006) DetectorElementAxialSpacing      (dv) = 1.0947227478027344 mm
+(7031,1033) DetectorExtents (cols_mm, rows_mm)    = (369.625, 32.5)
+  => pixel size from extents: cols=0.5022 rows=0.5078
+  (7029) du=1.285839319229126  vs extents/cols=0.5022  MATCH=False
+
+============================================================
+角度 Helix2Fan transform 检查
+============================================================
+Raw angles[:5]:           [4.67966413 4.6769371  4.67421007 4.67148304 4.66875553]
+Helix2Fan transformed:    [-9.39205312 -9.38932608 -9.38659905 -9.38387202 -9.38114451]
+Katsevich (unwrapped):    [4.67966413 4.6769371  4.67421007 4.67148304 4.66875553]
+Direction (Katsevich): decreasing (CW)

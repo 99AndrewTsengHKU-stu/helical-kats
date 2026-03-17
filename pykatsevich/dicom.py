@@ -38,6 +38,10 @@ import pydicom
 ANGLE_TAG = (0x7031, 0x1001)
 # Standard Table Position tag (mm).
 TABLE_POSITION_TAG = (0x0018, 0x9327)
+# Private tag: DetectorFocalCenterAxialPosition = z_0, the z location of the
+# detector's focal center (mm). Defined in DICOM-CT-PD User Manual Table 2.
+# This is the per-view z position for helical scans when the standard tag is absent.
+DETECTOR_AXIAL_POSITION_TAG = (0x7031, 0x1002)
 # Standard distance source to isocenter and distance source to detector tags.
 SOD_TAG = (0x0018, 0x9402)
 SDD_TAG = (0x0018, 0x1110)
@@ -114,16 +118,26 @@ def load_dicom_projections(
     # Read lightweight metadata first so we can sort by InstanceNumber.
     meta = []
     table_positions_available = True
+    axial_positions_available = True  # fallback: (7031,1002) DetectorFocalCenterAxialPosition
     for path in paths:
         ds = pydicom.dcmread(path, stop_before_pixels=True)
         if ANGLE_TAG not in ds:
             raise ValueError(f"{path.name} is missing private angle tag {ANGLE_TAG}")
         if TABLE_POSITION_TAG not in ds:
             table_positions_available = False
+        if DETECTOR_AXIAL_POSITION_TAG not in ds:
+            axial_positions_available = False
 
         instance = int(getattr(ds, "InstanceNumber", 0))
         angle = _decode_float32_tag(ds, ANGLE_TAG)
-        table_pos = float(ds[TABLE_POSITION_TAG].value) if TABLE_POSITION_TAG in ds else None
+        # Primary: standard table position tag
+        if TABLE_POSITION_TAG in ds:
+            table_pos = float(ds[TABLE_POSITION_TAG].value)
+        # Secondary: DetectorFocalCenterAxialPosition per DICOM-CT-PD User Manual
+        elif DETECTOR_AXIAL_POSITION_TAG in ds:
+            table_pos = _decode_float32_tag(ds, DETECTOR_AXIAL_POSITION_TAG)
+        else:
+            table_pos = None
         meta.append((instance, path, angle, table_pos))
 
     meta.sort(key=lambda item: item[0])
@@ -131,8 +145,13 @@ def load_dicom_projections(
     angles = np.asarray([item[2] for item in meta], dtype=np.float64)
     angles_unwrapped = np.unwrap(angles).astype(np.float32)
 
-    if table_positions_available:
-        table_positions = np.asarray([item[3] for item in meta], dtype=np.float64)
+    # Use table positions if any source gave us valid data
+    has_table = any(item[3] is not None for item in meta)
+    if has_table:
+        table_positions = np.asarray(
+            [item[3] if item[3] is not None else 0.0 for item in meta],
+            dtype=np.float64
+        )
     else:
         table_positions = None
 
@@ -170,15 +189,47 @@ def load_dicom_projections(
     det_cols = int(first_ds.Rows)
 
     det_extents = _decode_float32_tag(first_ds, DETECTOR_EXTENTS_TAG, count=2)
+    resample_equiangular = False
     if det_extents is not None:
         det_length_cols_mm, det_length_rows_mm = det_extents
-        det_pixel_size_cols = float(det_length_cols_mm / det_cols)
-        det_pixel_size_rows = float(det_length_rows_mm / det_rows)
+        # The DICOM-CT-PD tag stores the full detector extent on an equi-angular
+        # curved detector at isocenter (radius = SOD).  The arc-length pixel
+        # spacing is det_extent / n_channels.
+        #
+        # The Katsevich pipeline assumes a FLAT detector with equi-spaced pixels.
+        # We must resample from equi-angular to flat-detector coordinates.
+        arc_psize_cols = float(det_length_cols_mm / det_cols)   # arc-length per channel
+        arc_psize_rows = float(det_length_rows_mm / det_rows)   # arc-length per row
+        delta_gamma = arc_psize_cols / sod                       # angular step per channel
+
+        # Build the mapping: equi-angular channel index -> flat-detector position
+        # gamma_j = (j - center) * delta_gamma
+        # u_j = SDD * tan(gamma_j)
+        j_center = (det_cols - 1) / 2.0
+        j_indices = np.arange(det_cols, dtype=np.float64)
+        gamma = (j_indices - j_center) * delta_gamma
+        u_flat = sdd * np.tan(gamma)  # true flat-detector positions (mm)
+
+        # Target: uniformly-spaced flat-detector grid with same number of pixels
+        flat_psize_cols = float((u_flat[-1] - u_flat[0]) / (det_cols - 1))
+        u_target = u_flat[0] + np.arange(det_cols, dtype=np.float64) * flat_psize_cols
+
+        # For each target position, find the fractional source index in the
+        # equi-angular grid for interpolation:
+        # u_target[k] = SDD * tan((j_src - j_center) * delta_gamma)
+        # j_src = j_center + arctan(u_target[k] / SDD) / delta_gamma
+        j_src = j_center + np.arctan(u_target / sdd) / delta_gamma  # fractional indices
+        resample_equiangular = True
+
+        # The rows (z-direction) have much smaller cone angle; equi-angular
+        # correction is negligible there.  Use magnification-scaled row pitch.
+        det_pixel_size_cols = flat_psize_cols
+        det_pixel_size_rows = float(arc_psize_rows * sdd / sod)
     else:
         pixel_spacing = getattr(first_ds, "PixelSpacing", None)
         if pixel_spacing is not None and len(pixel_spacing) >= 2:
-            det_pixel_size_rows = float(pixel_spacing[0])
-            det_pixel_size_cols = float(pixel_spacing[1])
+            det_pixel_size_rows = float(pixel_spacing[1])
+            det_pixel_size_cols = float(pixel_spacing[0])
         else:
             det_pixel_size_cols = det_pixel_size_rows = 1.0
 
@@ -197,7 +248,24 @@ def load_dicom_projections(
         slope = float(getattr(ds, "RescaleSlope", 1.0))
         intercept = float(getattr(ds, "RescaleIntercept", 0.0))
         pixels = pixels * slope + intercept
-        projections[idx] = pixels.T  # transpose so shape matches (rows, cols)
+        proj = pixels.T  # transpose so shape matches (rows, cols)
+
+        if resample_equiangular:
+            # Resample each row from equi-angular to flat-detector grid
+            from scipy.ndimage import map_coordinates
+            # j_src contains the fractional column indices in the source grid
+            # We need to interpolate proj[row, :] at these positions for every row
+            col_coords = np.broadcast_to(j_src[np.newaxis, :], (det_rows, det_cols))
+            row_coords = np.broadcast_to(
+                np.arange(det_rows, dtype=np.float64)[:, np.newaxis],
+                (det_rows, det_cols),
+            )
+            proj = map_coordinates(
+                proj.astype(np.float64), [row_coords, col_coords],
+                order=3, mode='constant', cval=0.0,
+            ).astype(np.float32)
+
+        projections[idx] = proj
 
     # Keep the native signed pitch; caller can take abs if desired.
     pitch_mm_rad = pitch_mm_per_rad_signed
@@ -207,6 +275,8 @@ def load_dicom_projections(
         "SDD": float(sdd),
         "detector": {
             "detector psize": float(np.mean([det_pixel_size_cols, det_pixel_size_rows])),
+            "detector psize cols": float(det_pixel_size_cols),
+            "detector psize rows": float(det_pixel_size_rows),
             "detector rows": det_rows,
             "detector cols": det_cols,
         },
