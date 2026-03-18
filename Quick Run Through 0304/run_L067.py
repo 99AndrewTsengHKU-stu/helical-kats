@@ -220,15 +220,16 @@ print(f"  angle range: {np.degrees(meta['angles_rad'][-1]-meta['angles_rad'][0])
       f"({(meta['angles_rad'][-1]-meta['angles_rad'][0])/(2*np.pi):.2f} turns)")
 print(f"  pitch_mm_per_rad (signed): {meta['pitch_mm_per_rad_signed']:.4f}")
 
-# Compute VOXEL_SIZE_Z from actual DICOM table positions
+# Z voxel size: match GT DICOM (verified: 560 slices at 0.8mm spacing, z-span=447.2mm)
+# The GT volume is smaller than the table span (484.5mm) because edge slices
+# lack sufficient helical data for reconstruction.
+VOXEL_SIZE_Z = 0.8  # mm — from GT DICOM SliceLocation analysis
 if meta["table_positions_mm"] is not None:
     table_z_span = meta["table_positions_mm"].max() - meta["table_positions_mm"].min()
-    VOXEL_SIZE_Z = table_z_span / SLICES
-    print(f"  table z-span: {table_z_span:.2f} mm -> VOXEL_SIZE_Z = {VOXEL_SIZE_Z:.6f} mm")
-else:
-    VOXEL_SIZE_Z = VOXEL_SIZE_XY
-    print(f"  [WARN] No table positions, using VOXEL_SIZE_Z = VOXEL_SIZE_XY = {VOXEL_SIZE_Z:.4f}")
-print(f"  VOXEL_SIZE_XY = {VOXEL_SIZE_XY:.4f} mm, VOXEL_SIZE_Z = {VOXEL_SIZE_Z:.6f} mm")
+    vol_z_span = SLICES * VOXEL_SIZE_Z
+    print(f"  table z-span: {table_z_span:.2f} mm, volume z-span: {vol_z_span:.1f} mm "
+          f"(margin: {(table_z_span - vol_z_span)/2:.1f} mm each side)")
+print(f"  VOXEL_SIZE_XY = {VOXEL_SIZE_XY:.4f} mm, VOXEL_SIZE_Z = {VOXEL_SIZE_Z:.4f} mm")
 
 # ── Trim / decimate ─────────────────────────────────────────────────────
 if MAX_VIEWS is not None and MAX_VIEWS < len(sino):
