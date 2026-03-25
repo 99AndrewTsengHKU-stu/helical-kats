@@ -133,6 +133,8 @@ for chunk_idx in range(n_chunks):
     conf = create_configuration(sg_c, vol_geom)
     conf['source_pos'] = angles_c.astype(np.float32)
     conf['delta_s'] = float(np.mean(np.diff(angles_c)))
+    print(f"    [H3] projs_per_turn={conf['projs_per_turn']:.4f}, "
+          f"total_projs={len(angles_c)}, s_len={sg_c['helix']['angles_range']:.6f}", flush=True)
 
     t_chunk = time()
     filtered = filter_katsevich(
