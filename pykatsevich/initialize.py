@@ -129,15 +129,21 @@ def create_configuration(
     
     helical_conf['detector_rebin_rows_height'] = (np.pi + 2* helical_conf['half_fan_angle']) / (helical_conf['detector_rebin_rows'] - 1)
 
+    col_offset = scan_geometry['detector'].get('detector_col_offset', 0.0)
+    row_offset = scan_geometry['detector'].get('detector_row_offset', 0.0)
+
     helical_conf['col_coords'] = psize_cols * (np.arange(scan_geometry['detector']['detector cols'] + 1, dtype=np.float32)
-              + 0.0 # Here "0.0" is a hardcoded value of conf['detector_column_offset']
               - 0.5*(scan_geometry['detector']['detector cols'] - 1)
-              ) # EXTENDED coordinates!
+              - col_offset
+              ) # EXTENDED coordinates, centered on actual detector center
 
     helical_conf['row_coords'] = psize_rows * (np.arange(scan_geometry['detector']['detector rows'] + 1, dtype=np.float32)
-              + 0.0 # Here "0.0" is a hardcoded value of conf['detector_column_offset']
               - 0.5*(scan_geometry['detector']['detector rows'] - 1)
-              ) # EXTENDED coordinates!
+              - row_offset
+              ) # EXTENDED coordinates, centered on actual detector center
+
+    helical_conf['detector_col_offset'] = col_offset
+    helical_conf['detector_row_offset'] = row_offset
 
     rebin_coords =  -np.pi / 2 - helical_conf['half_fan_angle'] + helical_conf['detector_rebin_rows_height'] * np.arange(helical_conf['detector_rebin_rows'], dtype=np.float32)
 
@@ -172,7 +178,7 @@ def create_configuration(
 
     rebin_row = np.zeros(shape=(helical_conf['detector rows'], helical_conf['detector cols']), dtype=np.int32)
     
-    pos_start = int(0.5 * helical_conf['detector cols'])
+    pos_start = int(round(0.5 * (helical_conf['detector cols'] - 1) + col_offset))
     
     # Prepare helper arrays for reverse height rebinning:
     fracs_0 = np.zeros(shape=(helical_conf['detector rows'], helical_conf['detector cols']))

@@ -24,6 +24,7 @@ void fused_bp(
     float dx, float dy, float dz,
     int nx, int ny, int nz,
     float inv_scale,
+    float col_offset, float row_offset,
     int p_start, int p_end)
 {
     int ix = blockDim.x * blockIdx.x + threadIdx.x;
@@ -39,8 +40,8 @@ void fused_bp(
     float val = 0.0f;
     float SDD_over_psize_col = SDD / psize_col;
     float SDD_over_psize_row = SDD / psize_row;
-    float u_center = (float)(det_cols - 1) * 0.5f;
-    float v_center = (float)(det_rows - 1) * 0.5f;
+    float u_center = (float)(det_cols - 1) * 0.5f + col_offset;
+    float v_center = (float)(det_rows - 1) * 0.5f + row_offset;
 
     for (int p = p_start; p < p_end; p++) {
         float cs, sn;
@@ -146,6 +147,10 @@ def backproject_cupy(input_array, conf, vol_geom, proj_geom,
     det_rows = int(proj_geom['DetectorRowCount'])
     det_cols = int(proj_geom['DetectorColCount'])
 
+    # Detector center offsets (isocenter projection vs geometric center, in pixels)
+    col_offset = np.float32(conf.get('detector_col_offset', 0.0))
+    row_offset = np.float32(conf.get('detector_row_offset', 0.0))
+
     # Angles (source rotational position) and source z-positions -> GPU
     angles_gpu = cp.asarray(
         np.ascontiguousarray(conf['source_pos'], dtype=np.float32))
@@ -186,6 +191,7 @@ def backproject_cupy(input_array, conf, vol_geom, proj_geom,
                 np.float32(delta_x), np.float32(delta_y), np.float32(delta_z),
                 np.int32(nx), np.int32(ny), np.int32(nz),
                 inv_scale,
+                col_offset, row_offset,
                 np.int32(p_start), np.int32(p_end),
             ),
         )

@@ -26,6 +26,8 @@ def astra_helical_views(
         vertical_shifts: np.ndarray | None = None,
         pixel_size_col: float | None = None,
         pixel_size_row: float | None = None,
+        detector_col_offset: float = 0.0,
+        detector_row_offset: float = 0.0,
     ):
     """
     Generate ASTRA views from the helix description.
@@ -75,7 +77,11 @@ def astra_helical_views(
 
     ps_col = pixel_size_col if pixel_size_col is not None else pixel_size
     ps_row = pixel_size_row if pixel_size_row is not None else pixel_size
-    start_view = [SOD, 0, 0, -(SDD - SOD), 0, 0, 0, ps_col, 0, 0, 0, ps_row]
+    # Shift detector center so the actual central element (not geometric center)
+    # lies on the central ray.  Offset is in pixels; multiply by pixel size for mm.
+    det_u_shift = -detector_col_offset * ps_col
+    det_v_shift = -detector_row_offset * ps_row
+    start_view = [SOD, 0, 0, -(SDD - SOD), det_u_shift, det_v_shift, 0, ps_col, 0, 0, 0, ps_row]
 
     for i, aa in enumerate(angles):
         views_list.append(np.concatenate((

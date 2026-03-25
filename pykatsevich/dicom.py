@@ -45,8 +45,22 @@ DETECTOR_AXIAL_POSITION_TAG = (0x7031, 0x1002)
 # Standard distance source to isocenter and distance source to detector tags.
 SOD_TAG = (0x0018, 0x9402)
 SDD_TAG = (0x0018, 0x1110)
-# Private tag that stores the physical detector extents along the two axes.
-DETECTOR_EXTENTS_TAG = (0x7031, 0x1033)
+# Per DICOM-CT-PD User Manual v12, Table 1:
+# (7031,1033) DetectorCentralElement: (col_idx, row_idx) of the detector
+#   element aligning with the isocenter and the detector's focal center.
+DETECTOR_CENTRAL_ELEMENT_TAG = (0x7031, 0x1033)
+# (7029,1002) DetectorElementTransverseSpacing: width of each detector column,
+#   measured at the detector (mm).
+DETECTOR_COL_SPACING_TAG = (0x7029, 0x1002)
+# (7029,1006) DetectorElementAxialSpacing: width of each detector row,
+#   measured at the detector (mm).
+DETECTOR_ROW_SPACING_TAG = (0x7029, 0x1006)
+# (7029,100B) DetectorShape: "CYLINDRICAL", "SPHERICAL", or "FLAT".
+DETECTOR_SHAPE_TAG = (0x7029, 0x100B)
+# (7033,100B) Flying Focal Spot z-offset (mm) per view.
+# (7033,100E) indicates FFS mode, e.g. "FFSZ" = Flying Focal Spot in Z.
+FFS_Z_OFFSET_TAG = (0x7033, 0x100B)
+FFS_MODE_TAG = (0x7033, 0x100E)
 
 
 def _decode_float32_tag(ds: pydicom.Dataset, tag: Tuple[int, int], count: int = 1):
@@ -138,12 +152,17 @@ def load_dicom_projections(
             table_pos = _decode_float32_tag(ds, DETECTOR_AXIAL_POSITION_TAG)
         else:
             table_pos = None
-        meta.append((instance, path, angle, table_pos))
+        # Flying focal spot z-offset (mm)
+        ffs_z = _decode_float32_tag(ds, FFS_Z_OFFSET_TAG)
+        if ffs_z is None:
+            ffs_z = 0.0
+        meta.append((instance, path, angle, table_pos, ffs_z))
 
     meta.sort(key=lambda item: item[0])
     ordered_paths = [item[1] for item in meta]
     angles = np.asarray([item[2] for item in meta], dtype=np.float64)
     angles_unwrapped = np.unwrap(angles).astype(np.float32)
+    ffs_z_offsets = np.asarray([item[4] for item in meta], dtype=np.float32)
 
     # Use table positions if any source gave us valid data
     has_table = any(item[3] is not None for item in meta)
@@ -161,6 +180,14 @@ def load_dicom_projections(
     angle_step = float(np.mean(np.diff(angles_unwrapped)))
     first_ds = pydicom.dcmread(ordered_paths[0], stop_before_pixels=True)
 
+    sod = _get_float(first_ds, SOD_TAG, fallback=_decode_float32_tag(first_ds, (0x7031, 0x1003)))
+    sdd = _get_float(first_ds, SDD_TAG, fallback=_decode_float32_tag(first_ds, (0x7031, 0x1031)))
+    if sod is None or sdd is None:
+        raise ValueError("Missing SOD/SDD tags; cannot build scan geometry")
+
+    det_rows = int(first_ds.Columns)
+    det_cols = int(first_ds.Rows)
+
     if table_positions is not None:
         pitch_mm_per_angle = float(np.mean(np.diff(table_positions)))
         pitch_mm_per_rad_signed = float(
@@ -169,8 +196,13 @@ def load_dicom_projections(
     else:
         # Fallback: derive pitch from Spiral Pitch Factor and detector collimation (height).
         pitch_factor = _get_float(first_ds, (0x0018, 0x9311))
-        det_extents_tmp = _decode_float32_tag(first_ds, DETECTOR_EXTENTS_TAG, count=2)
-        collimation_mm = det_extents_tmp[1] if det_extents_tmp is not None else None
+        row_spacing = _decode_float32_tag(first_ds, DETECTOR_ROW_SPACING_TAG)
+        n_rows_val = int(struct.unpack("<H", bytes(first_ds[(0x7029, 0x1010)].value))[0]) \
+            if (0x7029, 0x1010) in first_ds else det_rows
+        if row_spacing is not None:
+            collimation_mm = float(n_rows_val * row_spacing * sod / sdd)
+        else:
+            collimation_mm = None
         if pitch_factor is None or collimation_mm is None:
             pitch_mm_per_rad_signed = 0.0
         else:
@@ -180,51 +212,56 @@ def load_dicom_projections(
         table_positions = pitch_mm_per_rad_signed * (angles_unwrapped - angles_unwrapped[0])
         pitch_mm_per_angle = float(np.mean(np.diff(table_positions)))
 
-    sod = _get_float(first_ds, SOD_TAG, fallback=_decode_float32_tag(first_ds, (0x7031, 0x1003)))
-    sdd = _get_float(first_ds, SDD_TAG, fallback=_decode_float32_tag(first_ds, (0x7031, 0x1031)))
-    if sod is None or sdd is None:
-        raise ValueError("Missing SOD/SDD tags; cannot build scan geometry")
+    # Read detector element spacing (measured at detector) from DICOM-CT-PD tags.
+    psize_col_at_det = _decode_float32_tag(first_ds, DETECTOR_COL_SPACING_TAG)
+    psize_row_at_det = _decode_float32_tag(first_ds, DETECTOR_ROW_SPACING_TAG)
+    central_element = _decode_float32_tag(first_ds, DETECTOR_CENTRAL_ELEMENT_TAG, count=2)
+    det_shape_raw = first_ds[DETECTOR_SHAPE_TAG].value if DETECTOR_SHAPE_TAG in first_ds else None
+    det_shape = bytes(det_shape_raw).decode("ascii", errors="ignore").strip() \
+        if det_shape_raw is not None else None
 
-    det_rows = int(first_ds.Columns)
-    det_cols = int(first_ds.Rows)
-
-    det_extents = _decode_float32_tag(first_ds, DETECTOR_EXTENTS_TAG, count=2)
     resample_equiangular = False
-    if det_extents is not None:
-        det_length_cols_mm, det_length_rows_mm = det_extents
-        # The DICOM-CT-PD tag stores the full detector extent on an equi-angular
-        # curved detector at isocenter (radius = SOD).  The arc-length pixel
-        # spacing is det_extent / n_channels.
-        #
-        # The Katsevich pipeline assumes a FLAT detector with equi-spaced pixels.
-        # We must resample from equi-angular to flat-detector coordinates.
-        arc_psize_cols = float(det_length_cols_mm / det_cols)   # arc-length per channel
-        arc_psize_rows = float(det_length_rows_mm / det_rows)   # arc-length per row
-        delta_gamma = arc_psize_cols / sod                       # angular step per channel
+    if psize_col_at_det is not None:
+        psize_col_at_det = float(psize_col_at_det)
+        psize_row_at_det = float(psize_row_at_det) if psize_row_at_det is not None else psize_col_at_det
 
-        # Build the mapping: equi-angular channel index -> flat-detector position
-        # gamma_j = (j - center) * delta_gamma
-        # u_j = SDD * tan(gamma_j)
-        j_center = (det_cols - 1) / 2.0
-        j_indices = np.arange(det_cols, dtype=np.float64)
-        gamma = (j_indices - j_center) * delta_gamma
-        u_flat = sdd * np.tan(gamma)  # true flat-detector positions (mm)
+        # Centre pixel index from DetectorCentralElement, fallback to geometric centre.
+        j_center = float(central_element[0]) if central_element is not None else (det_cols - 1) / 2.0
+        i_center = float(central_element[1]) if central_element is not None else (det_rows - 1) / 2.0
 
-        # Target: uniformly-spaced flat-detector grid with same number of pixels
-        flat_psize_cols = float((u_flat[-1] - u_flat[0]) / (det_cols - 1))
-        u_target = u_flat[0] + np.arange(det_cols, dtype=np.float64) * flat_psize_cols
+        is_cylindrical = det_shape is not None and "CYLINDRICAL" in det_shape.upper()
 
-        # For each target position, find the fractional source index in the
-        # equi-angular grid for interpolation:
-        # u_target[k] = SDD * tan((j_src - j_center) * delta_gamma)
-        # j_src = j_center + arctan(u_target[k] / SDD) / delta_gamma
-        j_src = j_center + np.arctan(u_target / sdd) / delta_gamma  # fractional indices
-        resample_equiangular = True
+        if is_cylindrical:
+            # For a cylindrical detector the element spacing at the detector
+            # subtends angle delta_gamma = psize_at_det / SDD.
+            delta_gamma = psize_col_at_det / sdd
 
-        # The rows (z-direction) have much smaller cone angle; equi-angular
-        # correction is negligible there.  Use magnification-scaled row pitch.
-        det_pixel_size_cols = flat_psize_cols
-        det_pixel_size_rows = float(arc_psize_rows * sdd / sod)
+            # Build equi-angular -> flat mapping (same structure as before).
+            j_indices = np.arange(det_cols, dtype=np.float64)
+            gamma = (j_indices - j_center) * delta_gamma
+            u_flat = sdd * np.tan(gamma)
+
+            flat_psize_cols = float((u_flat[-1] - u_flat[0]) / (det_cols - 1))
+            u_target = u_flat[0] + np.arange(det_cols, dtype=np.float64) * flat_psize_cols
+
+            j_src = j_center + np.arctan(u_target / sdd) / delta_gamma
+            resample_equiangular = True
+
+            det_pixel_size_cols = flat_psize_cols
+            det_pixel_size_rows = psize_row_at_det  # at detector plane
+
+            # Column center offset after rebinning: central ray (u=0) pixel index
+            # vs geometric center.
+            j_central_rebinned = float(-u_flat[0] / flat_psize_cols)
+            det_col_offset = j_central_rebinned - (det_cols - 1) / 2.0
+        else:
+            # FLAT detector — pixel spacing is directly the flat pitch.
+            det_pixel_size_cols = psize_col_at_det
+            det_pixel_size_rows = psize_row_at_det
+            det_col_offset = j_center - (det_cols - 1) / 2.0
+
+        # Row center offset: DICOM central element vs geometric center.
+        det_row_offset = i_center - (det_rows - 1) / 2.0
     else:
         pixel_spacing = getattr(first_ds, "PixelSpacing", None)
         if pixel_spacing is not None and len(pixel_spacing) >= 2:
@@ -232,6 +269,8 @@ def load_dicom_projections(
             det_pixel_size_cols = float(pixel_spacing[0])
         else:
             det_pixel_size_cols = det_pixel_size_rows = 1.0
+        det_col_offset = 0.0
+        det_row_offset = 0.0
 
     projections = np.empty((len(ordered_paths), det_rows, det_cols), dtype=np.float32)
     for idx, path in enumerate(ordered_paths):
@@ -279,6 +318,8 @@ def load_dicom_projections(
             "detector psize rows": float(det_pixel_size_rows),
             "detector rows": det_rows,
             "detector cols": det_cols,
+            "detector_col_offset": float(det_col_offset),
+            "detector_row_offset": float(det_row_offset),
         },
         "helix": {
             "angles_count": len(ordered_paths),
@@ -296,6 +337,7 @@ def load_dicom_projections(
         "detector_pixel_size_rows_mm": det_pixel_size_rows,
         "detector_pixel_size_cols_mm": det_pixel_size_cols,
         "scan_geometry": scan_geometry,
+        "ffs_z_offsets_mm": ffs_z_offsets,
     }
 
     return projections, metadata
