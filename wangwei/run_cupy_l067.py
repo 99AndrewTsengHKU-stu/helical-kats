@@ -97,6 +97,18 @@ def main() -> None:
     )
     parser.add_argument("--decimate", type=int, default=2)
     parser.add_argument("--chunk-theta", type=int, default=300)
+    parser.add_argument(
+        "--pitch-mm",
+        type=float,
+        default=PITCH_MM,
+        help="Table travel per complete rotation in mm.",
+    )
+    parser.add_argument(
+        "--views-per-rotation",
+        type=int,
+        default=VIEWS_PER_ROTATION,
+        help="Projection views per complete rotation before --decimate.",
+    )
     parser.add_argument("--full-nz", type=int, default=DEFAULT_FULL_NZ)
     parser.add_argument("--voxel-z", type=float, default=DEFAULT_VOXEL_Z_MM)
     parser.add_argument(
@@ -125,6 +137,8 @@ def main() -> None:
 
     if args.decimate < 1 or args.chunk_theta < 3:
         parser.error("--decimate must be >=1 and --chunk-theta must be >=3")
+    if args.pitch_mm <= 0 or args.views_per_rotation < 3:
+        parser.error("--pitch-mm must be >0 and --views-per-rotation must be >=3")
     if not args.h5.is_file():
         parser.error(f"HDF5 file not found: {args.h5}")
 
@@ -133,7 +147,7 @@ def main() -> None:
     args.prefilter_cache.parent.mkdir(parents=True, exist_ok=True)
 
     angles, z_center, nviews = _load_scan_metadata(args.h5, args.decimate)
-    delt_theta = (2.0 * np.pi / VIEWS_PER_ROTATION) * args.decimate
+    delt_theta = (2.0 * np.pi / args.views_per_rotation) * args.decimate
     theta = np.arange(nviews + 1, dtype=np.float32) * np.float32(delt_theta)
     theta_offset = float(angles[-1]) - np.pi / 2.0
 
@@ -150,7 +164,7 @@ def main() -> None:
     ).astype(np.float32)
     z_cor = full_z_cor[slice_indices]
 
-    h = PITCH_MM / (2.0 * np.pi)
+    h = args.pitch_mm / (2.0 * np.pi)
     half_fan = np.arcsin(float(np.max(np.abs(x_cor))) / DSO)
     delt_phi = delt_alpha * 4.0
     rdphi = int(np.ceil((np.pi / 2.0 + half_fan) / delt_phi))
@@ -164,6 +178,10 @@ def main() -> None:
     print(f"GPU: {gpu_name}; free={device.mem_info[0] / 1e9:.2f} GB")
     print(f"HDF5: {args.h5}")
     print(f"Views: {nviews} (decimate={args.decimate}); detector=736x64")
+    print(
+        f"Helix: pitch={args.pitch_mm:.6g} mm/rotation; "
+        f"views/rotation={args.views_per_rotation}"
+    )
     print(f"theta_offset={theta_offset:.6f} rad")
     print(f"Selected full-grid slices: {slice_indices.tolist()}")
     print(f"Selected z range: [{z_cor.min():.1f}, {z_cor.max():.1f}] mm")
@@ -179,6 +197,8 @@ def main() -> None:
             tuple(cached.shape) == expected_cache_shape
             and int(metadata.get("decimate", -1)) == args.decimate
             and Path(metadata.get("h5_path", "")).resolve() == args.h5.resolve()
+            and bool(np.isclose(float(metadata.get("h", np.nan)), h))
+            and bool(np.isclose(float(metadata.get("delt_theta", np.nan)), delt_theta))
         )
         del cached
         if not reuse_ok:
@@ -215,7 +235,7 @@ def main() -> None:
         g_filt,
         theta,
         theta_offset,
-        PITCH_MM,
+        args.pitch_mm,
         DSD,
         DSO,
         x_cor,
@@ -263,6 +283,9 @@ def main() -> None:
         "gpu": gpu_name,
         "decimate": args.decimate,
         "chunk_theta": args.chunk_theta,
+        "pitch_mm_per_rotation": args.pitch_mm,
+        "views_per_rotation": args.views_per_rotation,
+        "delt_theta_rad": delt_theta,
         "slice_indices": slice_indices.tolist(),
         "z_cor_mm": z_cor.tolist(),
         "rf_shape": list(rf.shape),
