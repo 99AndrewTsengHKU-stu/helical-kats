@@ -53,18 +53,23 @@ def _parse_slice_indices(text: str | None, full_nz: int) -> np.ndarray:
     return values
 
 
-def _load_scan_metadata(h5_path: Path, decimate: int) -> tuple[np.ndarray, float, int]:
+def _load_scan_metadata(
+    h5_path: Path, decimate: int
+) -> tuple[np.ndarray, float, int, int, int]:
     with h5py.File(h5_path, "r") as handle:
         angles = handle["angles_rad"][::decimate].astype(np.float32)
         table_positions = handle["table_positions_mm"]
         # The validated MATLAB script computes z_center before decimating
         # z_all, so it uses the two endpoints of the complete scan.
         z_center = (float(table_positions[0]) + float(table_positions[-1])) / 2.0
-        nraw = int(handle["projections"].shape[0])
+        projection_shape = handle["projections"].shape
+        if len(projection_shape) != 3:
+            raise RuntimeError(f"expected projection shape (views, rows, cols), got {projection_shape}")
+        nraw, detector_rows, detector_cols = map(int, projection_shape)
     nviews = math.ceil(nraw / decimate)
     if len(angles) != nviews:
         raise RuntimeError("angle/projection view count mismatch")
-    return angles, z_center, nviews
+    return angles, z_center, nviews, detector_rows, detector_cols
 
 
 def _save_preview(hu: np.ndarray, z_cor: np.ndarray, output_path: Path) -> None:
@@ -146,15 +151,21 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.prefilter_cache.parent.mkdir(parents=True, exist_ok=True)
 
-    angles, z_center, nviews = _load_scan_metadata(args.h5, args.decimate)
+    angles, z_center, nviews, detector_rows, detector_cols = _load_scan_metadata(
+        args.h5, args.decimate
+    )
     delt_theta = (2.0 * np.pi / args.views_per_rotation) * args.decimate
     theta = np.arange(nviews + 1, dtype=np.float32) * np.float32(delt_theta)
     theta_offset = float(angles[-1]) - np.pi / 2.0
 
     delt_alpha = 1.2858 / DSD
-    alpha_cor = (np.arange(1, 737) - 369.625) * delt_alpha
+    if detector_cols != 736:
+        raise RuntimeError(f"this L067 geometry expects 736 detector columns, got {detector_cols}")
+    alpha_cor = (np.arange(1, detector_cols + 1) - 369.625) * delt_alpha
     alpha_cor = -alpha_cor[::-1].astype(np.float32)
-    w_cor = ((np.arange(1, 65) - 32.5) * 1.0947).astype(np.float32)
+    w_cor = (
+        (np.arange(1, detector_rows + 1) - (detector_rows + 1) / 2.0) * 1.0947
+    ).astype(np.float32)
     x_cor = ((np.arange(1, 513) - 256.5) * VOXEL_XY_MM).astype(np.float32)
     y_cor = ((np.arange(1, 513) - 256.5) * VOXEL_XY_MM).astype(np.float32)
 
@@ -177,7 +188,10 @@ def main() -> None:
     gpu_name = properties["name"].decode() if isinstance(properties["name"], bytes) else properties["name"]
     print(f"GPU: {gpu_name}; free={device.mem_info[0] / 1e9:.2f} GB")
     print(f"HDF5: {args.h5}")
-    print(f"Views: {nviews} (decimate={args.decimate}); detector=736x64")
+    print(
+        f"Views: {nviews} (decimate={args.decimate}); "
+        f"detector={detector_cols}x{detector_rows}"
+    )
     print(
         f"Helix: pitch={args.pitch_mm:.6g} mm/rotation; "
         f"views/rotation={args.views_per_rotation}"
@@ -286,6 +300,8 @@ def main() -> None:
         "pitch_mm_per_rotation": args.pitch_mm,
         "views_per_rotation": args.views_per_rotation,
         "delt_theta_rad": delt_theta,
+        "detector_rows": detector_rows,
+        "detector_cols": detector_cols,
         "slice_indices": slice_indices.tolist(),
         "z_cor_mm": z_cor.tolist(),
         "rf_shape": list(rf.shape),
